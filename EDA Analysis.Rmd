@@ -1,0 +1,242 @@
+# EDA IN R
+## by Raphael Blaize Mukui
+
+```{r setup, include=FALSE}
+chooseCRANmirror(graphics=FALSE, ind=1)
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+### Research Question
+
+A Kenyan entrepreneur has created an online cryptography course and would want to advertise it on her blog. She currently targets audiences originating from various countries. In the past, she ran ads to advertise a related course on the same blog and collected data in the process. She would now like to employ your services as a Data Science Consultant to help her identify which individuals are most likely to click on her ads. 
+
+```
+
+### Metric of Success
+```
+
+1. Being able to perform various techniques of cleaning data ex Dealing with outliers or duplicates
+2. Performing various EDA techniques be it univaritate and Bi-Variate techniques
+```
+
+### Expiremental Design
+```
+
+1. Loading data
+2. Cheking the data (ex: Cheking the head or tail of the data)
+3. Performing cleaning techniques
+4. Univariate Analysis
+5. Bi-Variate Analysis
+6. Reccomendations
+7. Conclusions
+
+```
+### LOADING THE DATA 
+```{r}
+ad = read.csv("advertising.csv")
+
+## Checking the our data summary
+summary(ad)
+```
+###### From the table above we can see the
+```
+1. Mean
+2. Median
+3. Min
+```
+###### of our numerical columns, and the class of categrocial columns 
+
+### CHECKING THE DATA 
+```{r}
+## Checking the head of our data
+head(ad)
+```
+
+```{r}
+## Checking the tail of our data
+tail(ad)
+```
+
+
+#### PREVIEWING THE DATASET 
+```{r}
+#Checking the rows, columns and dimensions
+cat("Dataset Rows:", nrow(ad), "\nColumns in the dataset", ncol(ad), "\nDataset length:", length(ad))
+cat("\nDataset Dimension", dim(ad))
+```
+
+```{r}
+str(ad)
+```
+#####  From the above we can see the different datatypes of our columns 
+
+
+
+### CLEANING TECHNIQUES
+```{r}
+## Checking for outliers in our numerical columns 
+boxplot(ad$Daily.Internet.Usage)
+```
+###### From the above boxplot we can observe that the Daily Internet Usage column contains no outliers so we can move on from this column without worrying about dropping it.
+
+```{r}
+boxplot(ad$Area.Income)
+```
+###### So in this column as we can see from the above boxplot we have outliers so we will proceed to remove them by
+
+```{r}
+### For missing values that lie outside the 1.5*IQR limits, we could cap it by replacing those observations outside the lower limit with the value of 5th %ile and those that lie above the upper limit, with the value of 95th %ile.
+x = ad$Area.Income
+qnt <- quantile(x, probs=c(.25, .75), na.rm = T)
+caps <- quantile(x, probs=c(.05, .95), na.rm = T)
+H <- 1.5 * IQR(x, na.rm = T)
+x[x < (qnt[1] - H)] <- caps[1]
+x[x > (qnt[2] + H)] <- caps[2]
+
+boxplot(x)
+```
+##### We have removed the outliers in the column
+
+```{r}
+boxplot(ad$Daily.Time.Spent.on.Site)
+```
+```{r} 
+boxplot(ad$Age)
+```
+
+
+#### Cheking for duplicates
+
+```{r}
+sum(duplicated(ad))
+```
+##### We have no duplicates in this dataset 
+
+
+#### Cheking for Missing values in the dataset 
+```{r}
+colSums(is.na(ad))
+```
+##### The dataset contains no missing values 
+
+### EDA 
+
+#### UNIVARIATE ANALYSIS
+```{r}
+summary(ad)
+```
+
+##### From the above we can see the mean, median and the min for our numerical columns
+
+```{r}
+### Calculating the Spread of our columns and skewness
+hist(ad$Area.Income)
+```
+##### From the above spread of our Area.income column we can see that it is negatively skewed meaning that most of the data points lie towards the neagtive
+
+```{r}
+### Calculating the Spread of our columns and skewness
+hist(ad$Daily.Internet.Usage)
+```
+
+#### We can see that the Daily internet Usage has somewhat of a symmetrical distribution or rather the spread of the data is neither positvely nor negatively skewed
+
+
+```{r}
+### Calculating the Spread of our columns and skewness
+hist(ad$Age)
+```
+
+##### Age seems to be positvely skewed but it is still not quite clear from the spread above 
+
+#### BIVARIATE ANALYSIS
+```{r}
+### Checking the correlation of our age to the target column which is the clicked on ad
+cor.test(ad$Age, ad$Clicked.on.Ad, method = "pearson")
+```
+##### From the above we can see that Age and Clicked on Ad have a fairly moderate positive correlation at 0.49
+
+```{r}
+### Checking the correlation of our Area.Income to the target column which is the clicked on ad
+cor.test(ad$Area.Income, ad$Clicked.on.Ad, method = "pearson")
+```
+##### From the above we can see thatArea.Income and Clicked on Ad have a fairly moderate negative correlation at -0.47
+
+#### PLOTTING THE CORRELATION OF THE REST OF THE VARIABLES
+```{r}
+cor(Filter(is.numeric, ad))
+```
+
+##### The last column that has the correlation comapring the columns with the target column is the most intresting as we can see for example Daily.Time.Spent.on.Site and Clicked.on.Ad have a very strong negative correlation at -0.74
+
+
+##### VISULAISING THE CORRELATIONS
+
+```{r}
+install.packages("corrplot")
+library(corrplot)
+adnumerical <- Filter(is.numeric, ad)
+corrplot(cor(adnumerical))
+```
+
+##### HISTOGRAMS
+```{r}
+library(ggplot2)
+
+ggplot(data = ad, aes(x = Age, fill = Clicked.on.Ad))+
+    geom_histogram(binwidth = 1, color = 'black', fill = "white", alpha = 0.1) +  geom_density(aes(y=0.5*..count..), colour="red", adjust=4) +
+    labs(title = 'Ad Clicks with Age Distribution', x = 'Age', y = 'Frequency', fill = 'Clicked.on.Ad')
+```
+
+```{r}
+
+library(ggplot2)
+ggplot(data = ad, aes(x = Area.Income, fill = Clicked.on.Ad))+
+    geom_histogram(bins = 15,color = 'black',  alpha = 0.5) +
+    labs(title = 'Income distribution with AdS Clicked', x = 'Income', y = 'Frequency', fill = 'Clicked.on.Ad') 
+```
+
+
+```{r}
+
+library(ggplot2)
+ggplot(data = ad, aes(x = Age, fill = Daily.Internet.Usage))+
+    geom_histogram(bins = 20,color = 'black',  alpha = 0.5) +
+    labs(title = 'Daily.Internet.Usage distribution with Age', x = 'Age', y = 'Frequency', fill = 'Daily.Internet.Usage') 
+```
+
+```{r}
+
+library(ggplot2)
+ggplot(data = ad, aes(x = Daily.Time.Spent.on.Site, fill = Clicked.on.Ad))+
+    geom_histogram(bins = 30,color = 'black',  alpha = 0.5) +
+    labs(title = 'Daily.Time.Spent.on.Site distribution with ads clicked', x = 'Daily.Time.Spent.on.Site', y = 'Frequency', fill = 'Clicked.on.Ad') 
+```
+
+### Conclusions
+```
+The Most Ads clicked are between 25-32, and that is the age group that spend the most time online compared to other age groups as seen in the Histogram above
+
+Between 65-80 we can see that there is an increase of the number of hours spent on site compare to other daily times that people are on site 
+
+People earning around 55,000 - 70,000 seem to be the biggest group that clicks on Ads on the site compared to other different incomes
+```
+###Recommendations
+```
+
+1. She can target more people between the ages of 25-32 in-order to increase the number of people who are going to click the ads and also spend time online
+
+2. She can also proceed to target more people who spend between 20-30 hours online in-oder to increase the number of ad clicks because they have the lowest, i would not recommend that she focusses on people who spend 65-80 hours daily in site because it may have a negative imapct in the number of clicks
+
+3. She can also proceed to target people who ear 55,000 - 70,000 this may be considered a stable income hence may increase chances of buyin products from the ads clicked therefore targetting people in this income range may be benficial in the future
+
+4. I would also not recommend targetting people with low incomes as this is not ethically right, some of the people in the dataset maybe impulsive buyers which then brings the question of ethics into question
+
+```
+
+```{r}
+install.packages('plyr', repos = "http://cran.us.r-project.org")
+ 
+```
+
